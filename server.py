@@ -3,65 +3,65 @@ import websockets
 import json
 from datetime import datetime
 
-# Server address and port
-SERVER_HOST = '0.0.0.0'  # Listening on all IPs on the server
+# Địa chỉ và cổng máy chủ
+SERVER_HOST = '0.0.0.0'  # Lắng nghe trên tất cả các IP của máy chủ
 SERVER_PORT = 8765
 
-# Connected clients for broadcasting data
+# Danh sách các khách hàng kết nối để truyền phát dữ liệu
 clients = set()
 
-# Invoice data and parking slot status
+# Trạng thái chỗ đỗ xe và hóa đơn
 invoices = []
 parking_spots = {"1": "available", "2": "available", "3": "available", "4": "available"}
 
-# List of authorized RFID IDs
+# Danh sách ID RFID được cấp quyền
 authorized_ids = {
     "123456789": "Alice",
     "987654321": "Bob",
 }
 
-# Pricing information
-pricing_per_hour = 5.0  # Define hourly rate in your local currency
+# Thông tin giá cả
+pricing_per_hour = 5.0  # Giá cho mỗi giờ
 
-# Function to broadcast data to all clients
+# Hàm phát sóng dữ liệu tới tất cả các khách hàng
 async def broadcast(data):
     if clients:
         message = json.dumps(data)
         await asyncio.wait([asyncio.create_task(client.send(message)) for client in clients])
 
-# WebSocket connection handler
+# Xử lý kết nối WebSocket
 async def handle_connection(websocket, path):
-    print("New connection established")
+    print("Kết nối mới đã được thiết lập")
     clients.add(websocket)
 
     try:
-        # Send initial data about parking status and invoices
+        # Gửi dữ liệu ban đầu về trạng thái chỗ đỗ xe và danh sách hóa đơn
         await websocket.send(json.dumps({"type": "parkingStatus", "spots": parking_spots}))
         await websocket.send(json.dumps({"type": "invoiceList", "invoices": invoices}))
 
         async for message in websocket:
-            print(f"Received message: {message}")
+            print(f"Đã nhận tin nhắn: {message}")
             data = json.loads(message)
 
-            # Handle booking request
+            # Xử lý yêu cầu đặt chỗ
             if data['type'] == 'booking':
                 slot = data['slot']
                 start_time = datetime.fromisoformat(data['startTime'])
                 end_time = datetime.fromisoformat(data['endTime'])
                 
-                # Check parking slot availability
+                # Kiểm tra tình trạng chỗ đỗ
                 if parking_spots[slot] == "available":
-                    # Calculate total cost
+                    # Tính chi phí tổng cộng
                     duration_hours = (end_time - start_time).total_seconds() / 3600
                     total_cost = round(duration_hours * pricing_per_hour, 2)
                     
-                    # Simulate payment processing (you would integrate an actual payment gateway here)
-                    payment_status = "successful"  # Simulate a successful payment
+                    # Giả lập trạng thái thanh toán
+                    payment_status = "successful"
 
                     if payment_status == "successful":
-                        parking_spots[slot] = "occupied"  # Set slot status to "occupied"
+                        parking_spots[slot] = "occupied"  # Cập nhật trạng thái chỗ đỗ thành "occupied"
                         
-                        # Generate invoice and store
+                        # Tạo hóa đơn và lưu trữ
                         invoice = {
                             "slot": slot,
                             "startTime": data['startTime'],
@@ -71,7 +71,7 @@ async def handle_connection(websocket, path):
                         }
                         invoices.append(invoice)
 
-                        # Send booking confirmation to the user
+                        # Gửi xác nhận đặt chỗ tới người dùng
                         response = {
                             "type": "bookingConfirmation",
                             "slot": slot,
@@ -79,65 +79,67 @@ async def handle_connection(websocket, path):
                             "endTime": data['endTime'],
                             "cost": total_cost,
                             "status": "confirmed",
-                            "rfidAccessGranted": True  # Grant RFID access
+                            "rfidAccessGranted": True  # Cấp quyền truy cập RFID
                         }
                         await websocket.send(json.dumps(response))
                         
-                        # Broadcast parking status update to all clients
+                        # Phát bản cập nhật trạng thái chỗ đỗ tới tất cả các khách hàng
                         await broadcast({"type": "parkingStatus", "slot": slot, "status": "occupied"})
-                        print(f"Booking confirmed and payment processed for Slot {slot}")
+                        print(f"Đã xác nhận đặt chỗ và xử lý thanh toán cho Slot {slot}")
                     else:
                         await websocket.send(json.dumps({
                             "type": "error",
-                            "message": "Payment failed. Please try again."
+                            "message": "Thanh toán thất bại. Vui lòng thử lại."
                         }))
                 else:
                     await websocket.send(json.dumps({
                         "type": "error",
-                        "message": f"Slot {slot} is already occupied."
+                        "message": f"Slot {slot} đã được chiếm dụng."
                     }))
 
+            # Xử lý yêu cầu quét RFID
             elif data['type'] == 'rfidScanRequest':
-                rfid_id = "123456789"  # Simulate received RFID ID
+                rfid_id = data.get('rfidCode', '123456789')  # Nhận RFID từ yêu cầu hoặc giả lập nếu không có
                 user = authorized_ids.get(rfid_id)
                 
                 if user:
                     response = {
                         "type": "rfidStatus",
-                        "message": f"Welcome, {user}! Access granted.",
-                        "status": "Door opened"
+                        "message": f"Chào mừng, {user}! Quyền truy cập đã được cấp.",
+                        "status": "Cửa mở"
                     }
                 else:
                     response = {
                         "type": "rfidStatus",
-                        "message": "Access denied. Unauthorized RFID card.",
-                        "status": "Door closed"
+                        "message": "Từ chối truy cập. Thẻ RFID không hợp lệ.",
+                        "status": "Cửa đóng"
                     }
                 
                 await websocket.send(json.dumps(response))
-                print("RFID scan processed")
+                print("Đã xử lý quét RFID")
 
+            # Xử lý yêu cầu cập nhật trạng thái chỗ đỗ
             elif data['type'] == 'update_status':
                 slot = data['slot']
                 status = data['status']
                 parking_spots[slot] = status
                 await broadcast({"type": "parkingStatus", "slot": slot, "status": status})
-                print(f"Parking slot {slot} updated to {status}")
+                print(f"Đã cập nhật trạng thái chỗ đỗ {slot} thành {status}")
 
     except websockets.ConnectionClosed as e:
-        print(f"Connection closed: {e}")
+        print(f"Kết nối đã bị đóng: {e}")
     finally:
         clients.remove(websocket)
-        print("Connection removed")
+        print("Đã xóa kết nối")
 
-# WebSocket server main entry point
+# Điểm vào chính của máy chủ WebSocket
 async def main():
     async with websockets.serve(handle_connection, SERVER_HOST, SERVER_PORT):
-        print(f"WebSocket server running on ws://{SERVER_HOST}:{SERVER_PORT}")
-        await asyncio.Future()  # Run forever
+        print(f"Máy chủ WebSocket đang chạy trên ws://{SERVER_HOST}:{SERVER_PORT}")
+        await asyncio.Future()  # Chạy mãi mãi
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except Exception as e:
-        print(f"Server encountered an error: {e}")
+        print(f"Máy chủ gặp lỗi: {e}")

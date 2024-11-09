@@ -3,38 +3,23 @@
 
     // Initialize WebSocket and set up events
     function initWebSocket() {
-        ws = new WebSocket('ws://localhost:8765'); // Change to server IP if needed
+        ws = new WebSocket('ws://localhost:8765'); // Change to server IP if not testing locally
 
         ws.onopen = function() {
             console.log('Connected to WebSocket server');
-            document.getElementById('slotStatus').innerText = "Connected to server.";
+            updateStatus("Connected to server.");
         };
 
         // Handle messages from the server
         ws.onmessage = function(event) {
             const message = JSON.parse(event.data);
-
-            if (message.type === 'parkingStatus') {
-                document.getElementById('slotStatus').innerText = `Slot ${message.slot}: ${message.status}`;
-            } else if (message.type === 'rfidStatus') {
-                document.getElementById('rfidMessage').innerText = message.message;
-            } else if (message.type === 'bookingConfirmation') {
-                document.getElementById('slotStatus').innerText = `Booking confirmed for Slot ${message.slot} from ${message.startTime} to ${message.endTime}. Total Cost: $${message.cost}`;
-            } else if (message.type === 'availabilityStatus') {
-                document.getElementById('slotStatus').innerText = `Slot ${message.slot} is ${message.status}.`;
-            } else if (message.type === 'error') {
-                console.error("Error from server:", message.message);
-                document.getElementById('slotStatus').innerText = `Error: ${message.message}`;
-            }
+            handleServerMessage(message);
         };
 
         ws.onclose = function() {
             console.log('Disconnected from WebSocket server');
-            document.getElementById('slotStatus').innerText = "Disconnected from server. Attempting to reconnect...";
-            setTimeout(() => {
-                document.getElementById('slotStatus').innerText = "Reconnecting...";
-                reconnectWebSocket();
-            }, 3000);
+            updateStatus("Disconnected from server. Attempting to reconnect...");
+            reconnectWebSocket();
         };
 
         ws.onerror = function(error) {
@@ -43,9 +28,42 @@
     }
 
     function reconnectWebSocket() {
-        if (ws.readyState !== WebSocket.OPEN && ws.readyState !== WebSocket.CONNECTING) {
-            initWebSocket();
+        setTimeout(() => {
+            if (ws.readyState !== WebSocket.OPEN && ws.readyState !== WebSocket.CONNECTING) {
+                console.log("Reconnecting...");
+                updateStatus("Reconnecting...");
+                initWebSocket();
+            }
+        }, 3000);
+    }
+
+    // Unified function to handle server messages
+    function handleServerMessage(message) {
+        switch (message.type) {
+            case 'parkingStatus':
+                updateStatus(`Slot ${message.slot}: ${message.status}`);
+                break;
+            case 'rfidStatus':
+                document.getElementById('rfidMessage').innerText = message.message;
+                break;
+            case 'bookingConfirmation':
+                updateStatus(`Booking confirmed for Slot ${message.slot} from ${message.startTime} to ${message.endTime}. Total Cost: $${message.cost}`);
+                break;
+            case 'availabilityStatus':
+                updateStatus(`Slot ${message.slot} is ${message.status}.`);
+                break;
+            case 'error':
+                console.error("Error from server:", message.message);
+                updateStatus(`Error: ${message.message}`);
+                break;
+            default:
+                console.warn("Unknown message type:", message.type);
         }
+    }
+
+    // Helper function to update the status display
+    function updateStatus(message) {
+        document.getElementById('slotStatus').innerText = message;
     }
 
     // Send WebSocket message with connection check
@@ -54,7 +72,7 @@
             ws.send(JSON.stringify(data));
         } else {
             console.error('WebSocket is not open. Message not sent:', data);
-            document.getElementById('slotStatus').innerText = "Unable to send message. WebSocket not connected.";
+            updateStatus("Unable to send message. WebSocket not connected.");
         }
     }
 
@@ -71,7 +89,7 @@
 
         if (startTime && endTime) {
             const durationHours = (new Date(endTime) - new Date(startTime)) / 3600000;
-            const hourlyRate = 5.0; // Replace with actual hourly rate
+            const hourlyRate = 5.0; // Update with actual hourly rate if needed
             const estimatedCost = (durationHours * hourlyRate).toFixed(2);
 
             document.getElementById('costEstimate').innerText = `Estimated Cost: $${estimatedCost}`;
@@ -93,30 +111,25 @@
         };
 
         sendWebSocketMessage(bookingData);
-        document.getElementById('slotStatus').innerText = "Booking submitted. Waiting for confirmation...";
+        updateStatus("Booking submitted. Waiting for confirmation...");
     }
 
     // Request RFID scan
     function requestRFIDScan() {
-        const rfidRequest = { type: 'rfidScanRequest' };
-        sendWebSocketMessage(rfidRequest);
+        sendWebSocketMessage({ type: 'rfidScanRequest' });
         document.getElementById('rfidMessage').innerText = "Please scan your RFID card...";
     }
 
     // Update parking slot status
     function updateParkingStatus(slot, status) {
-        const statusUpdate = {
+        sendWebSocketMessage({
             type: 'update_status',
             slot: slot,
             status: status
-        };
-
-        sendWebSocketMessage(statusUpdate);
-        document.getElementById('slotStatus').innerText = `Updating status for Slot ${slot} to ${status}...`;
+        });
+        updateStatus(`Updating status for Slot ${slot} to ${status}...`);
     }
 
     // Initialize WebSocket on page load
-    window.onload = function() {
-        initWebSocket();
-    };
+    window.onload = initWebSocket;
 </script>
