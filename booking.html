@@ -85,6 +85,8 @@
                 document.getElementById('rfidMessage').innerText = message.message;
             } else if (message.type === 'bookingConfirmation') {
                 document.getElementById('slotStatus').innerText = `Booking confirmed for Slot ${message.slot} from ${message.startTime} to ${message.endTime}. Total Cost: ${message.cost}`;
+                // Automatically show updated status as "occupied" after booking confirmation
+                document.getElementById('slotStatus').innerText += `\nSlot ${message.slot} is now occupied.`;
             }
         };
 

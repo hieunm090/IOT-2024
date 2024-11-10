@@ -3,7 +3,7 @@
 
     // Initialize WebSocket and set up events
     function initWebSocket() {
-        ws = new WebSocket('ws://localhost:8765'); // Change to server IP if not testing locally
+        ws = new WebSocket('ws://localhost:8765'); // Update to server IP if not testing locally
 
         ws.onopen = function() {
             console.log('Connected to WebSocket server');
@@ -27,6 +27,7 @@
         };
     }
 
+    // Attempt to reconnect WebSocket after disconnection
     function reconnectWebSocket() {
         setTimeout(() => {
             if (ws.readyState !== WebSocket.OPEN && ws.readyState !== WebSocket.CONNECTING) {
