@@ -38,6 +38,22 @@
             <p id="statusMessage"></p>
         </section>
 
+        <section class="payment-section box" style="display: none;">
+            <h2>Thông Tin Thanh Toán</h2>
+            <label for="paymentMethod">Phương thức thanh toán:</label>
+            <select id="paymentMethod" required>
+                <option value="credit_card">Thẻ tín dụng</option>
+                <option value="debit_card">Thẻ ghi nợ</option>
+                <option value="paypal">PayPal</option>
+            </select>
+
+            <label for="paymentDetails">Thông tin thanh toán:</label>
+            <input type="text" id="paymentDetails" placeholder="Nhập thông tin thanh toán" required>
+
+            <button onclick="processPayment()">Xác nhận Thanh toán</button>
+            <p id="paymentStatusMessage"></p>
+        </section>
+
         <section class="status-section box">
             <h2>Trạng Thái Vị Trí Đỗ Xe</h2>
             <div class="spot-button-container">
@@ -77,8 +93,10 @@
             } else if (message.type === 'bookingConfirmation') {
                 document.getElementById('statusMessage').innerText = `Xác nhận đặt chỗ cho Vị trí ${message.slot} từ ${message.startTime} đến ${message.endTime}. Tổng chi phí: ${message.cost}`;
                 
-                // Tự động cập nhật trạng thái vị trí thành "occupied" sau khi đặt chỗ thành công
-                updateParkingStatus(message.slot, 'occupied');
+                // Hiển thị phần thông tin thanh toán sau khi xác nhận đặt chỗ
+                document.querySelector('.payment-section').style.display = 'block';
+            } else if (message.type === 'error') {
+                document.getElementById('statusMessage').innerText = `Thông báo: ${message.message}`;
             }
         };
 
@@ -89,7 +107,9 @@
 
         function checkAvailability() {
             const slot = document.getElementById('parkingSpot').value;
-            ws.send(JSON.stringify({ type: 'checkAvailability', slot: slot }));
+            if (slot) {
+                ws.send(JSON.stringify({ type: 'checkAvailability', slot: slot }));
+            }
         }
 
         function calculateCost() {
@@ -111,13 +131,33 @@
             const startTime = document.getElementById('startTime').value;
             const endTime = document.getElementById('endTime').value;
 
-            ws.send(JSON.stringify({
-                type: 'booking',
-                slot: slot,
-                startTime: startTime,
-                endTime: endTime
-            }));
-            document.getElementById('statusMessage').innerText = "Đang gửi yêu cầu đặt chỗ...";
+            if (slot && startTime && endTime) {
+                ws.send(JSON.stringify({
+                    type: 'booking',
+                    slot: slot,
+                    startTime: startTime,
+                    endTime: endTime
+                }));
+                document.getElementById('statusMessage').innerText = "Đang gửi yêu cầu đặt chỗ...";
+            } else {
+                document.getElementById('statusMessage').innerText = "Vui lòng nhập đầy đủ thông tin.";
+            }
+        }
+
+        function processPayment() {
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const paymentDetails = document.getElementById('paymentDetails').value;
+
+            if (paymentMethod && paymentDetails) {
+                ws.send(JSON.stringify({
+                    type: 'processPayment',
+                    method: paymentMethod,
+                    details: paymentDetails
+                }));
+                document.getElementById('paymentStatusMessage').innerText = "Đang xử lý thanh toán...";
+            } else {
+                document.getElementById('paymentStatusMessage').innerText = "Vui lòng nhập đầy đủ thông tin thanh toán.";
+            }
         }
 
         function requestRFIDScan() {

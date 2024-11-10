@@ -4,68 +4,53 @@ import json
 from datetime import datetime
 import mysql.connector
 
-# Địa chỉ và cổng máy chủ
-SERVER_HOST = '0.0.0.0'
-SERVER_PORT = 8765
-
-# Cấu hình kết nối đến cơ sở dữ liệu MySQL
+# Cấu hình kết nối MySQL
 db_config = {
     'host': 'localhost',
-    'user': 'root',         # User mặc định của XAMPP
-    'password': '',          # Mật khẩu mặc định của XAMPP là rỗng
-    'database': 'parking_db'  # Tên cơ sở dữ liệu
+    'user': 'root',         # Thay đổi nếu cần
+    'password': '',         # Thay đổi nếu có mật khẩu
+    'database': 'parking_db',
 }
 
-# Danh sách khách hàng kết nối
+# Danh sách kết nối WebSocket
 clients = set()
 
-# Hàm kết nối cơ sở dữ liệu
+# Hàm kết nối với cơ sở dữ liệu MySQL
 def connect_db():
     return mysql.connector.connect(**db_config)
 
-# Phát sóng dữ liệu tới tất cả các khách hàng
+# Phát sóng tới tất cả các khách hàng
 async def broadcast(data):
     if clients:
         message = json.dumps(data)
         await asyncio.wait([asyncio.create_task(client.send(message)) for client in clients])
 
-# Lấy trạng thái chỗ đỗ từ cơ sở dữ liệu
-def fetch_parking_spots():
-    db = connect_db()
-    cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT slot_id, status FROM parking_slots")
-    spots = {str(row['slot_id']): row['status'] for row in cursor.fetchall()}
-    db.close()
-    return spots
-
-# Xử lý đặt chỗ
+# Xử lý yêu cầu đặt chỗ
 async def handle_booking(data, websocket):
     slot = data['slot']
     start_time = datetime.fromisoformat(data['startTime'])
     end_time = datetime.fromisoformat(data['endTime'])
-
-    parking_spots = fetch_parking_spots()
-    if parking_spots.get(slot) != "available":
-        await websocket.send(json.dumps({"type": "error", "message": f"Slot {slot} đã được chiếm dụng."}))
-        return
-
+    
     duration_hours = (end_time - start_time).total_seconds() / 3600
     total_cost = round(duration_hours * 5.0, 2)  # Giả định giá mỗi giờ là 5.0
 
-    payment_status = "successful"  # Giả lập trạng thái thanh toán
-    if payment_status != "successful":
-        await websocket.send(json.dumps({"type": "error", "message": "Thanh toán thất bại."}))
-        return
-
-    # Thực hiện cập nhật cơ sở dữ liệu và phát sóng trạng thái
     db = connect_db()
     cursor = db.cursor()
 
+    # Kiểm tra chỗ đỗ còn trống không
+    cursor.execute("SELECT status FROM parking_slots WHERE slot_id = %s", (slot,))
+    result = cursor.fetchone()
+    if result[0] != 'available':
+        await websocket.send(json.dumps({"type": "error", "message": f"Slot {slot} đã được đặt."}))
+        db.close()
+        return
+
+    # Cập nhật trạng thái chỗ đỗ và tạo hóa đơn
     try:
         cursor.execute("UPDATE parking_slots SET status = 'occupied' WHERE slot_id = %s", (slot,))
         cursor.execute(
-            "INSERT INTO invoices (user_id, parking_slot_id, total_amount, payment_status) VALUES (%s, %s, %s, 'paid')",
-            (1, slot, total_cost)  # Giả định user_id là 1
+            "INSERT INTO invoices (user_id, parking_slot_id, total_amount, payment_status) VALUES (%s, %s, %s, 'pending')",
+            (1, slot, total_cost)  # Giả định user_id là 1 cho thử nghiệm
         )
         db.commit()
     finally:
@@ -76,25 +61,43 @@ async def handle_booking(data, websocket):
         "slot": slot,
         "startTime": data['startTime'],
         "endTime": data['endTime'],
-        "cost": total_cost,
-        "status": "confirmed",
-        "rfidAccessGranted": True
+        "cost": total_cost
     }
     await websocket.send(json.dumps(response))
     await broadcast({"type": "parkingStatus", "slot": slot, "status": "occupied"})
-    print(f"Đã xác nhận đặt chỗ và xử lý thanh toán cho Slot {slot}")
+    print(f"Đã xác nhận đặt chỗ cho Slot {slot}")
+
+# Xử lý yêu cầu thanh toán
+async def handle_payment(data, websocket):
+    payment_method = data.get('method')
+    payment_details = data.get('details')
+    total_cost = 50.00  # Số tiền mẫu, lấy từ hóa đơn nếu có
+
+    # Xử lý giao dịch
+    db = connect_db()
+    cursor = db.cursor()
+    
+    # Giả lập thanh toán thành công và cập nhật trạng thái hóa đơn
+    cursor.execute("UPDATE invoices SET payment_status = 'paid' WHERE user_id = %s AND payment_status = 'pending'", (1,))
+    db.commit()
+    db.close()
+
+    response = {
+        "type": "paymentStatus",
+        "message": f"Thanh toán thành công với {payment_method}",
+        "status": "paid"
+    }
+    await websocket.send(json.dumps(response))
+    print(f"Thanh toán thành công qua {payment_method}")
 
 # Xử lý quét RFID
 async def handle_rfid_scan(data, websocket):
-    rfid_id = data.get('rfidCode', '123456789')
+    rfid_code = data.get('rfidCode')
     db = connect_db()
     cursor = db.cursor()
 
-    try:
-        cursor.execute("SELECT username FROM users WHERE id = (SELECT user_id FROM rfid_cards WHERE rfid_code = %s)", (rfid_id,))
-        result = cursor.fetchone()
-    finally:
-        db.close()
+    cursor.execute("SELECT username FROM users WHERE id = (SELECT user_id FROM rfid_cards WHERE rfid_code = %s)", (rfid_code,))
+    result = cursor.fetchone()
 
     if result:
         response = {
@@ -105,7 +108,7 @@ async def handle_rfid_scan(data, websocket):
     else:
         response = {
             "type": "rfidStatus",
-            "message": "Từ chối truy cập. Thẻ RFID không hợp lệ.",
+            "message": "Thẻ RFID không hợp lệ.",
             "status": "Cửa đóng"
         }
 
@@ -119,50 +122,44 @@ async def handle_update_status(data):
     db = connect_db()
     cursor = db.cursor()
 
-    try:
-        cursor.execute("UPDATE parking_slots SET status = %s WHERE slot_id = %s", (status, slot))
-        db.commit()
-    finally:
-        db.close()
+    cursor.execute("UPDATE parking_slots SET status = %s WHERE slot_id = %s", (status, slot))
+    db.commit()
+    db.close()
 
     await broadcast({"type": "parkingStatus", "slot": slot, "status": status})
-    print(f"Đã cập nhật trạng thái chỗ đỗ {slot} thành {status}")
+    print(f"Đã cập nhật trạng thái của Slot {slot} thành {status}")
 
 # Xử lý kết nối WebSocket
 async def handle_connection(websocket, path):
-    print("Kết nối mới đã được thiết lập")
     clients.add(websocket)
+    print("Kết nối mới đã được thiết lập")
 
     try:
-        # Gửi trạng thái chỗ đỗ từ cơ sở dữ liệu ban đầu
-        parking_spots = fetch_parking_spots()
-        await websocket.send(json.dumps({"type": "parkingStatus", "spots": parking_spots}))
-
+        # Gửi trạng thái ban đầu
+        await websocket.send(json.dumps({"type": "status", "message": "Welcome to Parking Succorer!"}))
+        
         async for message in websocket:
-            print(f"Đã nhận tin nhắn: {message}")
             data = json.loads(message)
-
             if data['type'] == 'booking':
                 await handle_booking(data, websocket)
+            elif data['type'] == 'processPayment':
+                await handle_payment(data, websocket)
             elif data['type'] == 'rfidScanRequest':
                 await handle_rfid_scan(data, websocket)
             elif data['type'] == 'update_status':
                 await handle_update_status(data)
 
-    except websockets.ConnectionClosed as e:
-        print(f"Kết nối đã bị đóng: {e}")
+    except websockets.ConnectionClosed:
+        print("Kết nối đã bị đóng")
     finally:
         clients.remove(websocket)
         print("Đã xóa kết nối")
 
 # Điểm vào chính của máy chủ WebSocket
 async def main():
-    async with websockets.serve(handle_connection, SERVER_HOST, SERVER_PORT):
-        print(f"Máy chủ WebSocket đang chạy trên ws://{SERVER_HOST}:{SERVER_PORT}")
-        await asyncio.Future()  # Giữ máy chủ luôn hoạt động
+    async with websockets.serve(handle_connection, "0.0.0.0", 8765):
+        print("Máy chủ WebSocket đang chạy trên ws://0.0.0.0:8765")
+        await asyncio.Future()  # Chạy mãi mãi
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except Exception as e:
-        print(f"Máy chủ gặp lỗi: {e}")
+    asyncio.run(main())
