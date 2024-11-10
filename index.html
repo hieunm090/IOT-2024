@@ -1,121 +1,133 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width">
-    <meta name="description" content="smart parking system">
-	<meta name="keywords" content="smart, parking management,iot, smart parking system">
-    <title>Parking Succorer | Welcome</title>
-	<link rel="stylesheet" href="css/style.css">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-
-
-  </head>
-  <body>
+    <title>Parking Succorer | Book Your Spot</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
     <header>
-      <div class="container">
-        <div id="branding">
-			
-          <h1><span class="highlight">  Parking</span> Succorer</h1>
+        <div class="container">
+            <h1><span class="highlight">Parking</span> Succorer</h1>
         </div>
-        <nav>
-          <ul>
-            <li class="current"><a href="index.html">Home</a></li>
-			<li><a href="about.html">About</a></li>
-			<button type="button" class="loginbtn" onclick="window.location.href = 'login.html';">Login</button>
-			<button type="button" class="signupbtn" onclick="window.location.href = 'signup.html';">Signup</button>
-          </ul>
-        </nav>
-      </div>
-	</header>
-	
-<div class="section-1 box">
-	<h1>Smart way to park. </h1>
-	<h2>Park.Pay.<br>Be On Your Way.</h2>
-	
-</div>
+    </header>
 
-<div class="section-2 box">
+    <main>
+        <section class="reservation-section box">
+            <h2>Đặt Chỗ Đỗ Xe</h2>
+            <form id="reservationForm" onsubmit="submitBooking(event)">
+                <label for="parkingSpot">Vị trí đỗ xe:</label>
+                <select id="parkingSpot" required onchange="checkAvailability()">
+                    <option value="">Chọn vị trí</option>
+                    <option value="1">Slot 1</option>
+                    <option value="2">Slot 2</option>
+                    <option value="3">Slot 3</option>
+                    <option value="4">Slot 4</option>
+                </select>
 
-	<h1>Features</h1>
-	<hr>
+                <label for="startTime">Thời gian bắt đầu:</label>
+                <input type="datetime-local" id="startTime" required onchange="calculateCost()">
 
-		<section id="boxes">
-			<div class="container">
-			  <div class="part">
-				<img src="images/shutterstock_733419691-1-150x150.jpg">
-				<h3>SECURED PAYMENT</h3>
-				<p>Give the option to pre-book a space and pay online with our integrated payment portal or allow monetary transactions at the gate</p>
-			  </div>
-			  <div class="part">
-				<img src="images/shutterstock_1025093167-150x150.jpg">
-				<h3>REVENUE REPORT</h3>
-			<P>Get the parking lot history of all your properties by date or by property. You will be able to see a brief online report of all spots.
+                <label for="endTime">Thời gian kết thúc:</label>
+                <input type="datetime-local" id="endTime" required onchange="calculateCost()">
 
-				</P>
-			</div>
-			  <div class="part">
-				<img src="images/shutterstock_198983660-150x150.jpg">
-				<h3>WAITING LIST</h3>
-				<p>Let customers add their car to the waiting list for a specific day or month, and send them notifications when a lot becomes available.
+                <p id="costEstimate">Chi phí dự kiến: </p>
+                <button type="submit">Thanh toán</button>
+            </form>
+            <p id="statusMessage"></p>
+        </section>
 
-				</p>
-			  </div>
-			</div>
-		  </section>
+        <section class="status-section box">
+            <h2>Trạng Thái Vị Trí Đỗ Xe</h2>
+            <div class="spot-button-container">
+                <button onclick="updateParkingStatus(1, 'occupied')">Mark Slot 1 Occupied</button>
+                <button onclick="updateParkingStatus(1, 'available')">Mark Slot 1 Available</button>
+                <button onclick="updateParkingStatus(2, 'occupied')">Mark Slot 2 Occupied</button>
+                <button onclick="updateParkingStatus(2, 'available')">Mark Slot 2 Available</button>
+                <button onclick="updateParkingStatus(3, 'occupied')">Mark Slot 3 Occupied</button>
+                <button onclick="updateParkingStatus(3, 'available')">Mark Slot 3 Available</button>
+                <button onclick="updateParkingStatus(4, 'occupied')">Mark Slot 4 Occupied</button>
+                <button onclick="updateParkingStatus(4, 'available')">Mark Slot 4 Available</button>
+            </div>
+            <p id="slotStatus">Đang kiểm tra trạng thái...</p>
+        </section>
 
-</div>
+        <section class="rfid-section box">
+            <h2>Quét Thẻ RFID</h2>
+            <button onclick="requestRFIDScan()">Quét Thẻ</button>
+            <p id="rfidMessage"></p>
+        </section>
+    </main>
 
-<div class="section-3 box">
-	<h1>What are you waiting for?</h1>
-	<h3>Book your parking spot in advance.</h3>
-	<button type="button" class="learnmorebtn">Learn More</button>
-</div>
-<div class= "row">
-		<div class= "column">
-				<div class= img-text>
-				<h2>Looking for a spot in the moment?Parking Succorer puts the power in the palm of your hand.</h2>				
-				<img src="images/businessman-hand-holding-mobile-phone-with-car-icon.jpg" style="width:100%">
-				</div>
-				<div class="img-text">
-				<h2>Making it easier to plan a ride and get around town without worrying about where to park your bike.</h2>
-				<img src="images/eyeem-124641352.jpg" style="width:100%">
-				</div>
-	
-		</div>
-		<div class="column">
-			<div class="img-text">
-				<h2>Review full details of parking options available and select your lot.</h2>
-				<img src="images/mulher-sentada-carro-digitando-celular-aplicativos-mapas-localização.jpg" style="width:100%">
-			</div>
-				
-				<div class="img-text">
-					<h2>Park your car in an on- or off-street parking spot.</h2>
-					<img src="images/portrait-art-blue.jpg" style="width:100%">
-				</div>
-				
-	
-	
-		</div>
-<div class="section-4 box">
-		<div class="vertical-menu">
-				<a href="index.html" class="active">Home</a>
-				<a href="about.html">About</a>
-				<a href="#">How it works</a>
-				<a href="#">Help</a>
-				<a href="#">Contact Us</a>
-		</div>
-	
-		
-</div>
+    <script>
+        const ws = new WebSocket('ws://localhost:8765'); // Cập nhật địa chỉ IP nếu cần
 
-</div>
-<div class="footer">
-		<a href="https://www.facebook.com/" class="fa fa-facebook"></a>
-		<a href="https://twitter.com/" class="fa fa-twitter"></a>
-		<a href="https://www.google.com/" class="fa fa-google"></a>
-</div>
+        ws.onopen = function() {
+            console.log('Đã kết nối đến WebSocket server');
+            document.getElementById('slotStatus').innerText = "Đã kết nối đến server.";
+        };
 
+        ws.onmessage = function(event) {
+            const message = JSON.parse(event.data);
+            if (message.type === 'parkingStatus') {
+                document.getElementById('slotStatus').innerText = `Vị trí ${message.slot}: ${message.status}`;
+            } else if (message.type === 'rfidStatus') {
+                document.getElementById('rfidMessage').innerText = message.message;
+            } else if (message.type === 'bookingConfirmation') {
+                document.getElementById('statusMessage').innerText = `Xác nhận đặt chỗ cho Vị trí ${message.slot} từ ${message.startTime} đến ${message.endTime}. Tổng chi phí: ${message.cost}`;
+                
+                // Tự động cập nhật trạng thái vị trí thành "occupied" sau khi đặt chỗ thành công
+                updateParkingStatus(message.slot, 'occupied');
+            }
+        };
 
+        ws.onclose = function() {
+            console.log('Đã ngắt kết nối khỏi WebSocket server');
+            document.getElementById('slotStatus').innerText = "Đã ngắt kết nối khỏi server.";
+        };
+
+        function checkAvailability() {
+            const slot = document.getElementById('parkingSpot').value;
+            ws.send(JSON.stringify({ type: 'checkAvailability', slot: slot }));
+        }
+
+        function calculateCost() {
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            
+            if (startTime && endTime) {
+                const duration = (new Date(endTime) - new Date(startTime)) / 3600000; // Duration in hours
+                const hourlyRate = 5.0; // Đơn giá theo giờ
+                const cost = (duration * hourlyRate).toFixed(2);
+
+                document.getElementById('costEstimate').innerText = `Chi phí dự kiến: $${cost}`;
+            }
+        }
+
+        function submitBooking(event) {
+            event.preventDefault();
+            const slot = document.getElementById('parkingSpot').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+
+            ws.send(JSON.stringify({
+                type: 'booking',
+                slot: slot,
+                startTime: startTime,
+                endTime: endTime
+            }));
+            document.getElementById('statusMessage').innerText = "Đang gửi yêu cầu đặt chỗ...";
+        }
+
+        function requestRFIDScan() {
+            ws.send(JSON.stringify({ type: 'rfidScanRequest' }));
+        }
+
+        function updateParkingStatus(slot, status) {
+            ws.send(JSON.stringify({ type: 'update_status', slot: slot, status: status }));
+            document.getElementById('slotStatus').innerText = `Đang cập nhật trạng thái cho Vị trí ${slot} thành ${status}...`;
+        }
+    </script>
 </body>
 </html>

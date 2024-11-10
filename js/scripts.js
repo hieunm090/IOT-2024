@@ -49,6 +49,8 @@
                 break;
             case 'bookingConfirmation':
                 updateStatus(`Booking confirmed for Slot ${message.slot} from ${message.startTime} to ${message.endTime}. Total Cost: $${message.cost}`);
+                // Automatically update the slot status to "occupied" after booking confirmation
+                updateParkingStatus(message.slot, 'occupied');
                 break;
             case 'availabilityStatus':
                 updateStatus(`Slot ${message.slot} is ${message.status}.`);

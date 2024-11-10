@@ -387,3 +387,116 @@ body{
     50% { border-color:#66fcf1; }
   }
  
+  /* Reservation Section */
+.reservation-section {
+  margin: 20px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.reservation-section h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.reservation-section label {
+  display: block;
+  margin: 10px 0 5px;
+}
+
+.reservation-section input,
+.reservation-section select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.reservation-section button {
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.reservation-section button:hover {
+  background-color: #45a049;
+}
+
+#costEstimate, #statusMessage, #slotStatus, #rfidMessage {
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* Status Section */
+.status-section, .rfid-section {
+  margin: 20px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.status-section h2, .rfid-section h2 {
+  font-size: 20px;
+  color: #333;
+}
+
+/* Button container for status update */
+.spot-button-container button {
+  width: 48%;
+  padding: 10px;
+  margin: 5px 1%;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.spot-button-container button:hover {
+  background-color: #0056b3;
+}
+
+.spot-button-container button:active {
+  background-color: #004085;
+}
+
+/* Different statuses */
+#slotStatus, #rfidMessage, #statusMessage {
+  color: #333;
+  padding: 10px;
+  background-color: #e9ecef;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+#slotStatus.connected {
+  color: #28a745;
+  background-color: #d4edda;
+}
+
+#slotStatus.disconnected {
+  color: #dc3545;
+  background-color: #f8d7da;
+}
+
+/* Styling for responsive layout */
+@media (max-width: 768px) {
+  .container {
+      width: 90%;
+  }
+
+  form button, .spot-button-container button {
+      width: 100%;
+      margin: 5px 0;
+  }
+}
