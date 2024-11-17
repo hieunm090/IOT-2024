@@ -7,8 +7,8 @@ import mysql.connector
 # Cấu hình kết nối MySQL
 db_config = {
     'host': 'localhost',
-    'user': 'root',         # Thay đổi nếu cần
-    'password': '',         # Thay đổi nếu có mật khẩu
+    'user': 'root',         
+    'password': '',         
     'database': 'parking_db',
 }
 
