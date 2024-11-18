@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hóa Đơn Gửi Xe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background: #333;
+            color: #fff;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        .invoice-details {
+            margin: 20px 0;
+        }
+        .invoice-details p {
+            margin: 5px 0;
+        }
+        .btn-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            background: #28a745;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Hóa Đơn Gửi Xe</h1>
+    </header>
+    <div class="container">
+        <h2>Chi Tiết Hóa Đơn</h2>
+        <div class="invoice-details">
+            <p><strong>Mã Hóa Đơn:</strong> <span id="invoiceId">Đang tải...</span></p>
+            <p><strong>Họ Tên Khách Hàng:</strong> <span id="userName">Đang tải...</span></p>
+            <p><strong>Vị Trí Đỗ Xe:</strong> <span id="slotNumber">Đang tải...</span></p>
+            <p><strong>Thời Gian Bắt Đầu:</strong> <span id="startTime">Đang tải...</span></p>
+            <p><strong>Thời Gian Kết Thúc:</strong> <span id="endTime">Đang tải...</span></p>
+            <p><strong>Tổng Chi Phí:</strong> <span id="totalCost">Đang tải...</span> VNĐ</p>
+            <p><strong>Trạng Thái Thanh Toán:</strong> <span id="paymentStatus">Đang tải...</span></p>
+        </div>
+        <div class="btn-container">
+            <a href="index.html" class="btn">Quay Về Trang Chủ</a>
+        </div>
+    </div>
+    <script>
+        // Dữ liệu mẫu cho kiểm tra (Có thể xóa khi triển khai thực tế)
+        if (!localStorage.getItem('invoiceData')) {
+            localStorage.setItem('invoiceData', JSON.stringify({
+                invoiceId: "HD12345",
+                userName: "Nguyễn Văn A",
+                slotNumber: "A1",
+                startTime: "2024-11-18 08:00",
+                endTime: "2024-11-18 12:00",
+                totalCost: "200,000",
+                paymentStatus: "Đã thanh toán"
+            }));
+        }
+
+        // Lấy và hiển thị dữ liệu hóa đơn
+        window.onload = function () {
+            const invoiceData = JSON.parse(localStorage.getItem('invoiceData'));
+            if (invoiceData) {
+                document.getElementById('invoiceId').innerText = invoiceData.invoiceId;
+                document.getElementById('userName').innerText = invoiceData.userName;
+                document.getElementById('slotNumber').innerText = invoiceData.slotNumber;
+                document.getElementById('startTime').innerText = invoiceData.startTime;
+                document.getElementById('endTime').innerText = invoiceData.endTime;
+                document.getElementById('totalCost').innerText = invoiceData.totalCost;
+                document.getElementById('paymentStatus').innerText = invoiceData.paymentStatus;
+            } else {
+                document.body.innerHTML = `
+                    <div style="text-align:center; padding: 50px;">
+                        <h1>Lỗi: Không tìm thấy dữ liệu hóa đơn.</h1>
+                        <a href="index.html" class="btn">Quay Về Trang Chủ</a>
+                    </div>
+                `;
+            }
+        };
+    </script>
+</body>
+</html>

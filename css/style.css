@@ -500,3 +500,16 @@ body{
       margin: 5px 0;
   }
 }
+#costEstimate {
+  font-size: 18px; /* Tăng kích thước chữ */
+  color: #007bff; /* Màu xanh lam nổi bật */
+  font-weight: bold; /* Chữ đậm */
+  margin-top: 10px; /* Thêm khoảng cách phía trên */
+  text-align: center; /* Canh giữa nội dung */
+  background-color: #f9f9f9; /* Nền xám nhạt để làm nổi bật */
+  padding: 10px; /* Thêm khoảng cách bên trong */
+  border: 1px solid #ddd; /* Viền nhẹ màu xám */
+  border-radius: 5px; /* Bo góc mềm mại */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Đổ bóng nhẹ */
+}
+
